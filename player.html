@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PowerApps 闖關 🍄</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+  :root {
+    --mario-red: #E52521;
+    --mario-blue: #049CD8;
+    --mario-yellow: #FBD000;
+    --mario-green: #43B047;
+    --mario-dark: #1a1a2e;
+    --mario-darker: #0d0d1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--mario-darker);
+    color: white;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+
+  /* Pixel BG */
+  .pixel-bg {
+    position: fixed; inset: 0; pointer-events: none;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(4,156,216,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(229,37,33,0.08) 0%, transparent 50%);
+  }
+
+  .ground-strip {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 32px;
+    background: repeating-linear-gradient(90deg, #43B047 0, #43B047 24px, #3a9a3e 24px, #3a9a3e 48px);
+    border-top: 3px solid #2d7a30; z-index: 1;
+  }
+
+  .screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px 20px 48px;
+    transition: opacity 0.4s;
+    position: relative; z-index: 10;
+  }
+  .screen.hidden { display: none; }
+
+  /* ===== NAME SCREEN ===== */
+  #nameScreen { gap: 24px; }
+
+  .game-logo {
+    font-size: 72px;
+    animation: bounce 1s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .logo-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; color: var(--mario-yellow);
+    text-shadow: 2px 2px 0 var(--mario-red);
+    text-align: center; line-height: 1.8;
+  }
+
+  .name-card {
+    background: rgba(0,0,0,0.7);
+    border: 3px solid var(--mario-yellow);
+    border-radius: 12px; padding: 24px 20px;
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .name-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px; color: var(--mario-yellow);
+    text-align: center;
+  }
+
+  .name-input {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 22px; font-weight: 900;
+    background: #000; color: var(--mario-green);
+    border: 3px solid var(--mario-green);
+    padding: 14px 16px; border-radius: 8px;
+    text-align: center; outline: none; width: 100%;
+    letter-spacing: 2px;
+  }
+  .name-input::placeholder { color: #444; letter-spacing: 1px; }
+  .name-input:focus { border-color: var(--mario-yellow); box-shadow: 0 0 12px rgba(251,208,0,0.3); }
+
+  .btn-join {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; background: var(--mario-red);
+    color: white; border: none; padding: 18px;
+    border-radius: 8px; width: 100%; cursor: pointer;
+    border-bottom: 6px solid #9a1a17;
+    transition: all 0.1s;
+  }
+  .btn-join:active { transform: translateY(4px); border-bottom-width: 2px; }
+
+  /* ===== ENTRANCE SCREEN ===== */
+  #entranceScreen { gap: 20px; }
+
+  .big-mario {
+    font-size: 100px;
+    filter: drop-shadow(0 0 30px var(--mario-yellow));
+  }
+  .spin-enter { animation: spinEnter 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  @keyframes spinEnter {
+    0% { transform: scale(0) rotate(-360deg); opacity: 0; }
+    70% { transform: scale(1.3) rotate(20deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .sparkle-ring {
+    position: absolute;
+    font-size: 24px;
+    animation: sparkleOrbit 2s linear infinite;
+  }
+  @keyframes sparkleOrbit {
+    from { transform: rotate(0deg) translateX(80px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
+  }
+
+  .player-name-tag {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 15px; color: var(--mario-yellow);
+    text-shadow: 2px 2px 0 var(--mario-red);
+    text-align: center; margin-top: 8px;
+  }
+
+  .waiting-text {
+    font-size: 14px; color: #aaa;
+    text-align: center; line-height: 1.8;
+    animation: waitPulse 2s ease-in-out infinite;
+  }
+  @keyframes waitPulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* ===== ANSWER SCREEN ===== */
+  #answerScreen { gap: 12px; padding-top: 20px; justify-content: flex-start; }
+
+  .a-header {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+  }
+  .a-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; background: var(--mario-red);
+    padding: 6px 12px; border-radius: 4px;
+    border-bottom: 3px solid #9a1a17; white-space: nowrap;
+  }
+  .a-title {
+    font-size: 13px; font-weight: 700; color: var(--mario-yellow);
+    flex: 1;
+  }
+
+  .a-question {
+    font-size: clamp(14px, 4vw, 18px);
+    font-weight: 900; line-height: 1.5;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    border-left: 4px solid var(--mario-yellow);
+    padding: 14px 16px; border-radius: 6px;
+    width: 100%;
+  }
+  .a-sub { font-size: 11px; color: #888; margin-bottom: 6px; }
+
+  .options-list {
+    display: flex; flex-direction: column; gap: 10px;
+    width: 100%;
+  }
+
+  .option-btn {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 3px solid rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 14px 16px;
+    cursor: pointer; transition: all 0.15s;
+    text-align: left; color: white; font-family: inherit;
+    width: 100%;
+  }
+  .option-btn:active { transform: scale(0.97); }
+  .option-btn.selected {
+    border-color: var(--mario-yellow);
+    background: rgba(251,208,0,0.15);
+    box-shadow: 0 0 16px rgba(251,208,0,0.2);
+  }
+  .option-btn.submitted {
+    opacity: 0.6; pointer-events: none;
+  }
+  .option-btn.submitted.selected {
+    opacity: 1; pointer-events: none;
+  }
+
+  .opt-key {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px; color: var(--mario-yellow);
+    min-width: 20px; margin-top: 2px;
+  }
+  .opt-text {
+    font-size: clamp(12px, 3.5vw, 15px);
+    font-weight: 700; line-height: 1.4;
+  }
+  .opt-check {
+    margin-left: auto; font-size: 20px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .option-btn.selected .opt-check { opacity: 1; }
+
+  .submit-zone {
+    width: 100%; display: flex; flex-direction: column;
+    align-items: center; gap: 10px; margin-top: 4px;
+  }
+
+  .btn-submit {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px; background: var(--mario-green);
+    color: white; border: none; padding: 16px;
+    border-radius: 8px; width: 100%; cursor: pointer;
+    border-bottom: 5px solid #2d7a30; transition: all 0.1s;
+  }
+  .btn-submit:active { transform: translateY(4px); border-bottom-width: 2px; }
+  .btn-submit:disabled { background: #555; border-bottom-color: #333; cursor: not-allowed; }
+
+  .submitted-msg {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px; color: var(--mario-green);
+    text-align: center; display: none;
+  }
+  .submitted-msg.show { display: block; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes popIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+
+  /* Multi mode */
+  .multi-hint {
+    font-size: 11px; color: var(--mario-blue);
+    text-align: center; background: rgba(4,156,216,0.1);
+    border: 1px solid rgba(4,156,216,0.3); border-radius: 6px;
+    padding: 8px 12px; width: 100%;
+  }
+
+  /* Score display for Q3 */
+  .score-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px; color: var(--mario-yellow);
+    text-align: center;
+  }
+
+  /* ===== DONE SCREEN ===== */
+  #doneScreen { gap: 20px; }
+
+  .done-emoji { font-size: 80px; animation: bounce 1s ease-in-out infinite; }
+
+  .done-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px; color: var(--mario-yellow);
+    text-shadow: 2px 2px 0 var(--mario-red);
+    text-align: center; line-height: 1.8;
+  }
+
+  .done-msg {
+    font-size: 15px; color: #ccc; text-align: center;
+    line-height: 1.7;
+    background: rgba(0,0,0,0.5); border-radius: 10px;
+    padding: 16px 20px; max-width: 320px;
+    border-left: 4px solid var(--mario-green);
+  }
+</style>
+</head>
+<body>
+<div class="pixel-bg"></div>
+<div class="ground-strip"></div>
+
+<!-- ===== NAME SCREEN ===== -->
+<div class="screen" id="nameScreen">
+  <div class="game-logo">🍄</div>
+  <div class="logo-text">PowerApps<br>闖關大賽</div>
+  <div class="name-card">
+    <div class="name-label">🎮 輸入你的專屬藝名</div>
+    <input class="name-input" id="nameInput" placeholder="例：超級護理師" maxlength="12" autofocus>
+    <button class="btn-join" onclick="joinGame()">▶ 加入闖關！</button>
+  </div>
+</div>
+
+<!-- ===== ENTRANCE SCREEN ===== -->
+<div class="screen hidden" id="entranceScreen">
+  <div style="position:relative; display:flex; align-items:center; justify-content:center; width:160px; height:160px;">
+    <div class="big-mario" id="bigMario">🍄</div>
+    <div class="sparkle-ring" style="animation-delay:0s">⭐</div>
+    <div class="sparkle-ring" style="animation-delay:0.5s; animation-direction:reverse">✨</div>
+    <div class="sparkle-ring" style="animation-delay:1s">🌟</div>
+  </div>
+  <div class="player-name-tag" id="playerNameTag">勇者登場！</div>
+  <div class="waiting-text">
+    等待講者開始遊戲...<br>
+    看大螢幕喔 👀
+  </div>
+</div>
+
+<!-- ===== ANSWER SCREEN ===== -->
+<div class="screen hidden" id="answerScreen">
+  <div class="a-header">
+    <div class="a-badge" id="aBadge">第 1 關</div>
+    <div class="a-title" id="aTitle">題目標題</div>
+  </div>
+  <div class="a-question">
+    <div class="a-sub" id="aSub"></div>
+    <span id="aQuestion">題目載入中...</span>
+  </div>
+  <div class="multi-hint hidden" id="multiHint">💡 可以複選！選完再按送出</div>
+  <div class="options-list" id="optionsList"></div>
+  <div class="submit-zone">
+    <button class="btn-submit" id="btnSubmit" onclick="submitAnswer()" disabled>請先選擇答案</button>
+    <div class="submitted-msg" id="submittedMsg">✅ 已送出！看大螢幕等結果～</div>
+  </div>
+</div>
+
+<!-- ===== DONE SCREEN ===== -->
+<div class="screen hidden" id="doneScreen">
+  <div class="done-emoji">🏆</div>
+  <div class="done-title">闖關完成！<br>你是 Power 勇者！</div>
+  <div class="done-msg">
+    恭喜你已具備使用<br>
+    <strong style="color:var(--mario-yellow)">Power Apps 的理由！</strong><br><br>
+    看大螢幕，我們來認識<br>
+    PowerApps 怎麼搭訕急救車 🚑
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ============================================================
+// 🔧 Firebase 設定 - 請換成你的 Firebase 設定（與 host.html 相同）
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyC2-K7c_5AOhhapRSUyCQ5ANp9CGb-1Syw",
+  authDomain: "powerapps-quiz-915a5.firebaseapp.com",
+  databaseURL: "https://powerapps-quiz-915a5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "powerapps-quiz-915a5",
+  storageBucket: "powerapps-quiz-915a5.firebasestorage.app",
+  messagingSenderId: "575556763968",
+  appId: "1:575556763968:web:0f5d923079d3eb9bd3faa5"
+};
+// ============================================================
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const QUESTIONS = [
+  {
+    id: 'q1', badge: '第 1 關', title: '閃烏龜的馬力歐 🐢',
+    question: '你是哪一種資料苦主？',
+    sub: '你曾經遇過⬇️',
+    isMulti: false,
+    options: [
+      { key: 'A', text: '✍️ 手寫再 key 進系統，補過整個月急救車點班紙本' },
+      { key: 'B', text: '🔍 LINE 回報點班物件遺失，找到源頭卻不能下載了' },
+      { key: 'C', text: '📊 Excel 傳來傳去版本大亂，哪版才是正確版？' },
+      { key: 'D', text: '😭 全部都是！' },
+    ]
+  },
+  {
+    id: 'q2', badge: '第 2 關', title: '通水管的考驗 🪠',
+    question: '急救車點班現場，你經歷過哪些？',
+    sub: '你我的職涯日常⬇️',
+    isMulti: false,
+    options: [
+      { key: 'A', text: '⏱️ 封條被打開要重點，25 分鐘的人生就那樣站著過去...' },
+      { key: 'B', text: '📄 點班紙本找不到，找到發現被人墊便當或移走了...' },
+      { key: 'C', text: '🕳️ 歸檔時發現少兩週紀錄，整個 2 月點班表憑空消失...' },
+      { key: 'D', text: '😭 全部都是！' },
+    ]
+  },
+  {
+    id: 'q3', badge: '第 3 關', title: '救公主！快問快答 👸',
+    question: '你有沒有用過這些工具？（複選）',
+    sub: '有用過就選！每選一個累積 1 分⬇️',
+    isMulti: true,
+    options: [
+      { key: 'A', text: '📊 用過 Excel 整理資料' },
+      { key: 'B', text: '📝 填過 Google 表單' },
+      { key: 'C', text: '📱 下載過 LINE 記事本的東西' },
+      { key: 'D', text: '☁️ 用過雲端 Google 試算表（線上 Excel）' },
+    ]
+  }
+];
+
+let playerName = '';
+let playerId = '';
+let currentQ = -1;
+let selectedAnswers = [];
+let hasSubmitted = false;
+
+// Listen game state
+onValue(ref(db, 'game'), snap => {
+  const game = snap.val();
+  if (!game || !playerName) return;
+
+  if (game.state === 'question' && game.currentQ !== currentQ) {
+    currentQ = game.currentQ;
+    selectedAnswers = [];
+    hasSubmitted = false;
+    showAnswerScreen(currentQ);
+  }
+  if (game.state === 'final') {
+    showScreen('doneScreen');
+    playWin();
+  }
+});
+
+// ===== JOIN GAME =====
+window.joinGame = function() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) {
+    shake(document.getElementById('nameInput'));
+    return;
+  }
+  playerName = name;
+  playerId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+
+  // Register player
+  set(ref(db, `players/${playerId}`), { name, joinedAt: Date.now() });
+
+  showScreen('entranceScreen');
+  document.getElementById('playerNameTag').textContent = `⭐ ${name} 登場！`;
+
+  const mario = document.getElementById('bigMario');
+  mario.classList.add('spin-enter');
+  playJoin();
+};
+
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.joinGame();
+});
+
+// ===== SHOW ANSWER SCREEN =====
+function showAnswerScreen(idx) {
+  const q = QUESTIONS[idx];
+  document.getElementById('aBadge').textContent = q.badge;
+  document.getElementById('aTitle').textContent = q.title;
+  document.getElementById('aQuestion').textContent = q.question;
+  document.getElementById('aSub').textContent = q.sub;
+
+  const multiHint = document.getElementById('multiHint');
+  if (q.isMulti) multiHint.classList.remove('hidden');
+  else multiHint.classList.add('hidden');
+
+  const list = document.getElementById('optionsList');
+  list.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.id = `opt-${opt.key}`;
+    btn.innerHTML = `
+      <span class="opt-key">${opt.key}</span>
+      <span class="opt-text">${opt.text}</span>
+      <span class="opt-check">✅</span>
+    `;
+    btn.onclick = () => selectOption(opt.key, q.isMulti);
+    list.appendChild(btn);
+  });
+
+  const submitBtn = document.getElementById('btnSubmit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '請先選擇答案';
+  document.getElementById('submittedMsg').classList.remove('show');
+
+  showScreen('answerScreen');
+}
+
+// ===== SELECT OPTION =====
+window.selectOption = function(key, isMulti) {
+  if (hasSubmitted) return;
+
+  if (isMulti) {
+    const idx = selectedAnswers.indexOf(key);
+    if (idx > -1) {
+      selectedAnswers.splice(idx, 1);
+      document.getElementById(`opt-${key}`).classList.remove('selected');
+    } else {
+      selectedAnswers.push(key);
+      document.getElementById(`opt-${key}`).classList.add('selected');
+    }
+  } else {
+    selectedAnswers = [key];
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById(`opt-${key}`).classList.add('selected');
+  }
+
+  const submitBtn = document.getElementById('btnSubmit');
+  if (selectedAnswers.length > 0) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = isMulti
+      ? `▶ 送出 (選了 ${selectedAnswers.length} 個)`
+      : '▶ 送出答案！';
+  } else {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '請先選擇答案';
+  }
+  playClick();
+};
+
+// ===== SUBMIT =====
+window.submitAnswer = function() {
+  if (hasSubmitted || selectedAnswers.length === 0) return;
+  hasSubmitted = true;
+
+  const q = QUESTIONS[currentQ];
+  const answer = q.isMulti ? selectedAnswers : selectedAnswers[0];
+
+  set(ref(db, `votes/${playerId}`), {
+    name: playerName,
+    answer,
+    qId: q.id,
+    at: Date.now()
+  });
+
+  // Update UI
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.add('submitted'));
+  document.getElementById('btnSubmit').disabled = true;
+  document.getElementById('btnSubmit').textContent = '✅ 已送出';
+  document.getElementById('submittedMsg').classList.add('show');
+
+  playSubmit();
+};
+
+// ===== SCREENS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// ===== SHAKE =====
+function shake(el) {
+  el.style.transform = 'translateX(-8px)';
+  setTimeout(() => { el.style.transform = 'translateX(8px)'; }, 80);
+  setTimeout(() => { el.style.transform = ''; }, 160);
+}
+
+// ===== SOUNDS =====
+function beep(freq, dur, type='square', vol=0.12) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq; o.type = type;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(e){}
+}
+function playClick() { beep(880, 0.08); }
+function playSubmit() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[523,0.08],[659,0.08],[784,0.12]].forEach(([f,d], i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'square';
+      const t = ctx.currentTime + i * 0.1;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t+d);
+      o.start(t); o.stop(t+d);
+    });
+  } catch(e){}
+}
+function playJoin() { beep(988, 0.05); setTimeout(() => beep(1319, 0.2), 80); }
+function playWin() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[523,0.1],[659,0.1],[784,0.1],[1047,0.3]].forEach(([f,d],i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'square';
+      const t = ctx.currentTime + i*0.12;
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t+d);
+      o.start(t); o.stop(t+d);
+    });
+  } catch(e){}
+}
+</script>
+</body>
+</html>
